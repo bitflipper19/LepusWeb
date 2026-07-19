@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LEPUS-8 &mdash; 8-bit Microcomputer Emulator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="pcb">
+  <div class="screw tl"></div><div class="screw tr"></div><div class="screw bl"></div><div class="screw br"></div>
+
+  <header>
+    <div>
+      <h1>LEPUS&#8209;8</h1>
+      <div class="sub">8&#8209;bit microcomputer &middot; assembler + emulator</div>
+    </div>
+    <div class="chip-id">
+      256&times;8 MEM &middot; <b>3 REG</b> &middot; 32 OPCODES<br>
+      PROGRAM 0x00&ndash;0x57 &middot; STACK 0x58&ndash;0x5F<br>
+      SCRATCH 0x60&ndash;0x9F &middot; VIDEO 0xA0&ndash;0xFF
+    </div>
+  </header>
+
+  <div class="layout">
+    <div>
+      <div class="panel">
+        <div class="label">Assembly source <span class="hint">.lasm</span></div>
+        <textarea id="editor" spellcheck="false"></textarea>
+        <div class="toolbar">
+          <button class="primary" id="btnAssemble">Assemble</button>
+          <button id="btnStep">Step</button>
+          <button id="btnRun">Run</button>
+          <button id="btnTurbo">Turbo Run</button>
+          <button id="btnPause">Pause</button>
+          <button class="danger" id="btnReset">Reset</button>
+          <button id="btnSave">Save .asm</button>
+          <button id="btnLoad">Load .asm</button>
+          <input type="file" id="fileInput" accept=".asm,.lasm,.txt">
+        </div>
+        <div class="speedrow">
+          <span>Speed</span>
+          <input type="range" id="speed" min="1" max="500" value="120">
+          <span id="speedLabel">120 ms/step</span>
+          <span class="status-led" id="statusLed"><span class="dot"></span><span id="statusText">idle</span></span>
+        </div>
+        <div id="log"></div>
+      </div>
+
+      <div class="panel">
+        <div class="label">Memory &middot; 0x00&ndash;0xFF <span class="hint">click a cell to edit (hex)</span></div>
+        <div class="mem-legend">
+          <span><i class="swatch sw-prog"></i>program</span>
+          <span><i class="swatch sw-stack"></i>stack</span>
+          <span><i class="swatch sw-misc"></i>scratch</span>
+          <span><i class="swatch sw-vid"></i>video</span>
+          <span><i class="swatch sw-scr"></i>screen bitmap (0xB8&ndash;0xFF)</span>
+        </div>
+        <div id="memgrid"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="label">Registers</div>
+        <div class="regs" id="regGrid"></div>
+        <div class="flags" id="flagsGrid"></div>
+      </div>
+
+      <div class="panel">
+        <div class="label">OUT register &middot; 7&#8209;segment display</div>
+        <div class="sevseg-wrap">
+          <div>
+            <div class="digit" id="digitHi"></div>
+            <div class="sevseg-label">HI NIBBLE</div>
+          </div>
+          <div>
+            <div class="digit" id="digitLo"></div>
+            <div class="sevseg-label">LO NIBBLE</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="label">Video output &middot; 24&times;24 monochrome</div>
+        <div class="screen-wrap">
+          <div id="screen"></div>
+          <div class="screen-caption">bytes 0xB8&ndash;0xFF, MSB&#8209;first, row&#8209;major</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer>LEPUS&#8209;8 emulator &mdash; runs entirely in your browser, nothing leaves this page</footer>
+</div>
+
+<script src="engine.js"></script>
+<script src="ui.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
