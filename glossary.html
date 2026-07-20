@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LEPUS-8 Glossary</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .doc-panel { background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 6px; padding: 20px; margin-bottom: 20px; color: var(--ink); line-height: 1.6; }
+  h2 { color: var(--amber); font-size: 16px; margin-top: 0; border-bottom: 1px dashed var(--panel-edge); padding-bottom: 10px; }
+  h3 { color: var(--green); font-size: 14px; margin-top: 20px; text-transform: uppercase; }
+  code { background: #081008; padding: 2px 6px; border-radius: 3px; color: var(--green); border: 1px solid var(--panel-edge); }
+  
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+  th, td { border: 1px solid var(--panel-edge); padding: 8px 10px; text-align: left; }
+  th { background: #0c1710; color: var(--muted); font-weight: normal; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
+  tr:nth-child(even) td { background: #0b130e; }
+  .syntax { color: var(--amber); white-space: nowrap; font-family: var(--mono); }
+  
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 980px){ .grid-2{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="pcb">
+  <header>
+    <div>
+      <h1>LEPUS&#8209;8</h1>
+      <div class="sub">Reference Glossary & Instruction Set</div>
+      <div style="margin-top: 10px; font-size: 11px;">
+        <a href="index.html" style="color: var(--green); text-decoration: none;">Emulator</a> &middot; 
+        <a href="glossary.html" style="color: var(--amber); text-decoration: none;">Glossary</a> &middot; 
+        <a href="samples.html" style="color: var(--green); text-decoration: none;">Sample Programs</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="grid-2">
+    <div class="doc-panel">
+      <h2>Architecture & Registers</h2>
+      <p>The LEPUS-8 is an 8-bit microcomputer with strict domain-specific registers. Operations are routed depending on the mathematical domain:</p>
+      <ul>
+        <li><code>A</code> <strong>(Arithmetic Register)</strong>: Used as the primary accumulator for ADD and SUB.</li>
+        <li><code>B</code> <strong>(Bitwise Register)</strong>: Used as the primary accumulator for XOR, OR, and AND.</li>
+        <li><code>C</code> <strong>(Shift/Counter Register)</strong>: Used as the primary accumulator for shifting (SHL, SHR, ASHR) and advanced incrementing.</li>
+        <li><code>PC</code> <strong>(Program Counter)</strong>: Tracks the memory address of the next instruction.</li>
+        <li><code>SP</code> <strong>(Stack Pointer)</strong>: Points to the top of the stack (grows upward from 0x58).</li>
+        <li><code>OUT_REG</code>: A dedicated latch register connected directly to the 7-segment display.</li>
+      </ul>
+      <h3>Status Flags</h3>
+      <ul>
+        <li><code>ZF</code> <strong>(Zero Flag)</strong>: Set to 1 if the result of an ALU operation, bitwise operation, shift, increment, or decrement results in exactly 0.</li>
+        <li><code>CF</code> <strong>(Carry Flag)</strong>: Set to 1 if an ADD operation overflows (> 255) or a SUB operation underflows (< 0).</li>
+      </ul>
+    </div>
+
+    <div class="doc-panel">
+      <h2>Memory Map (256 Bytes)</h2>
+      <p>Memory is divided into fixed operational zones. Attempting to execute code outside the Program zone will halt the CPU.</p>
+      <table>
+        <tr><th>Range</th><th>Zone Name</th><th>Description</th></tr>
+        <tr><td>0x00 - 0x57</td><td>Program Memory</td><td>Executable code is loaded here.</td></tr>
+        <tr><td>0x58 - 0x5F</td><td>Hardware Stack</td><td>Used by PUSH and POP (8 bytes deep).</td></tr>
+        <tr><td>0x60 - 0x9F</td><td>Scratchpad</td><td>General purpose RAM for variables.</td></tr>
+        <tr><td>0xA0 - 0xB7</td><td>Video Base</td><td>General video config (unused in basic renderer).</td></tr>
+        <tr><td>0xB8 - 0xFF</td><td>Screen Bitmap</td><td>Direct mapped to the 24x24 pixel grid.</td></tr>
+      </table>
+      <h3>Addressing Modes</h3>
+      <ul>
+        <li><strong>Immediate</strong>: A literal value, e.g., <code>0x4F</code> or <code>123</code>.</li>
+        <li><strong>Direct (Memory)</strong>: Reading/Writing to an address, denoted by brackets, e.g., <code>[0x60]</code>.</li>
+        <li><strong>Indirect (Pointer)</strong>: Reading an address to find <em>another</em> address, denoted by a star, e.g., <code>*[0x60]</code>. Works universally across most instructions!</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="doc-panel">
+    <h2>Instruction Set Reference</h2>
+    
+    <h3>Data Movement</h3>
+    <table>
+      <tr><th>Mnemonic</th><th>Syntax</th><th>Description</th></tr>
+      <tr><td>ILDA / ILDB / ILDC</td><td class="syntax">ILDA val</td><td>Loads the literal <code>val</code> into register A, B, or C.</td></tr>
+      <tr><td>LDA / LDB / LDC</td><td class="syntax">LDA [addr]<br>LDA *[addr]</td><td>Loads the value stored at memory <code>[addr]</code> (or the pointer at <code>*[addr]</code>) into register A, B, or C.</td></tr>
+      <tr><td>WBA / WBB</td><td class="syntax">WBA [addr]<br>WBA *[addr]</td><td>Writes the contents of A or B into memory <code>[addr]</code>. If <code>*</code> is used, it treats the value at <code>[addr]</code> as a pointer to the final destination.</td></tr>
+      <tr><td>LOAD</td><td class="syntax">LOAD [addr] val<br>LOAD *[addr] val</td><td>Directly stores the literal <code>val</code> into memory <code>[addr]</code> (or pointer <code>*[addr]</code>).</td></tr>
+      <tr><td>SWPB / SWPC / SWPBC</td><td class="syntax">SWPB</td><td>Swaps the contents of two registers: (A and B), (A and C), or (B and C).</td></tr>
+    </table>
+
+    <h3>Arithmetic & ALU (Targets A)</h3>
+    <table>
+      <tr><th>Mnemonic</th><th>Syntax</th><th>Description</th></tr>
+      <tr><td>ADD</td><td class="syntax">ADD src</td><td>Adds <code>src</code> (B, C, [addr], *[addr], or val) to A. Result stored in A. Updates CF and ZF.</td></tr>
+      <tr><td>SUB</td><td class="syntax">SUB src</td><td>Subtracts <code>src</code> (B, C, [addr], *[addr], or val) from A. Result stored in A. Updates CF and ZF.</td></tr>
+      <tr><td>INC</td><td class="syntax">INC reg<br>INC C, src</td><td>Increments A, B, or C by 1. Alternatively, increments C by <code>src</code> (val, [addr], or *[addr]). Updates ZF.</td></tr>
+      <tr><td>DEC</td><td class="syntax">DEC reg<br>DEC C, src</td><td>Decrements A, B, or C by 1. Alternatively, decrements C by <code>src</code> (val, [addr], or *[addr]). Updates ZF.</td></tr>
+    </table>
+
+    <h3>Bitwise Logic (Targets B)</h3>
+    <table>
+      <tr><th>Mnemonic</th><th>Syntax</th><th>Description</th></tr>
+      <tr><td>AND</td><td class="syntax">AND src</td><td>Bitwise AND between B and <code>src</code> (A, C, [addr], *[addr], or val). Stored in B. Updates ZF.</td></tr>
+      <tr><td>OR</td><td class="syntax">OR src</td><td>Bitwise OR between B and <code>src</code> (A, C, [addr], *[addr], or val). Stored in B. Updates ZF.</td></tr>
+      <tr><td>XOR</td><td class="syntax">XOR src</td><td>Bitwise XOR between B and <code>src</code> (A, C, [addr], *[addr], or val). Stored in B. Updates ZF.</td></tr>
+    </table>
+
+    <h3>Bit Shifting (Targets C)</h3>
+    <table>
+      <tr><th>Mnemonic</th><th>Syntax</th><th>Description</th></tr>
+      <tr><td>SHL</td><td class="syntax">SHL src</td><td>Logical Shift Left on C by <code>src</code> bits (val, [addr], or *[addr]). Updates ZF.</td></tr>
+      <tr><td>SHR</td><td class="syntax">SHR src</td><td>Logical Shift Right on C. Zeros are shifted in from the left. Updates ZF.</td></tr>
+      <tr><td>ASHR</td><td class="syntax">ASHR src</td><td>Arithmetic Shift Right on C. The sign bit (MSB) is preserved and shifted in. Updates ZF.</td></tr>
+    </table>
+
+    <h3>Control Flow & Jumps</h3>
+    <table>
+      <tr><th>Mnemonic</th><th>Syntax</th><th>Description</th></tr>
+      <tr><td>JMP</td><td class="syntax">JMP label</td><td>Unconditional jump. Moves the PC to <code>label</code>.</td></tr>
+      <tr><td>JZ</td><td class="syntax">JZ label</td><td>Jump if Zero. Jumps if ZF is 1.</td></tr>
+      <tr><td>JNZ</td><td class="syntax">JNZ label</td><td>Jump if Not Zero. Jumps if ZF is 0.</td></tr>
+      <tr><td>JC</td><td class="syntax">JC label</td><td>Jump if Carry. Jumps if CF is 1.</td></tr>
+      <tr><td>JNC</td><td class="syntax">JNC label</td><td>Jump if Not Carry. Jumps if CF is 0.</td></tr>
+      <tr><td>HLT</td><td class="syntax">HLT</td><td>Halts the CPU. Code execution stops.</td></tr>
+    </table>
+
+    <h3>Stack & I/O</h3>
+    <table>
+      <tr><th>Mnemonic</th><th>Syntax</th><th>Description</th></tr>
+      <tr><td>PUSH</td><td class="syntax">PUSH src</td><td>Pushes <code>src</code> (A, B, C, FLAG, [addr], *[addr], or val) to the stack (at SP), then increments SP.</td></tr>
+      <tr><td>POP</td><td class="syntax">POP dest</td><td>Decrements SP, then pops the top of the stack into <code>dest</code> (A, B, C, [addr], or *[addr]).</td></tr>
+      <tr><td>OUT</td><td class="syntax">OUT reg</td><td>Copies the value of A, B, or C directly to the OUT_REG, displaying it on the 7-segment hex display.</td></tr>
+      <tr><td>NOP</td><td class="syntax">NOP</td><td>No Operation. Consumes a clock cycle and moves to the next instruction.</td></tr>
+    </table>
+  </div>
+</div>
+</body>
+</html>

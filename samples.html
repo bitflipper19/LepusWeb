@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LEPUS-8 Samples</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .doc-panel { background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 6px; padding: 20px; margin-bottom: 20px; position: relative; }
+  h2 { color: var(--amber); font-size: 16px; margin-top: 0; }
+  p { color: var(--ink); line-height: 1.6; font-size: 14px; }
+  .code-container { position: relative; }
+  pre { background: #081008; padding: 15px; border-left: 3px solid var(--green); color: var(--ink); overflow-x: auto; font-family: var(--mono); }
+  .copy-btn { position: absolute; top: 10px; right: 10px; background: var(--green-dim); color: var(--green); border: 1px solid var(--green); padding: 4px 8px; border-radius: 4px; cursor: pointer; font-family: var(--mono); font-size: 10px; text-transform: uppercase; }
+  .copy-btn:hover { background: var(--green); color: #000; }
+</style>
+</head>
+<body>
+<div class="pcb">
+  <header>
+    <div>
+      <h1>LEPUS&#8209;8</h1>
+      <div class="sub">Sample Programs</div>
+      <div style="margin-top: 10px; font-size: 11px;">
+        <a href="index.html" style="color: var(--green); text-decoration: none;">Emulator</a> &middot; 
+        <a href="glossary.html" style="color: var(--green); text-decoration: none;">Glossary</a> &middot; 
+        <a href="samples.html" style="color: var(--amber); text-decoration: none;">Sample Programs</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="doc-panel">
+    <h2>1. Fibonacci Sequence</h2>
+    <p>Calculates the Fibonacci sequence. The result of each step is output to the 7-segment display (in Hex) until the sequence exceeds 255.</p>
+    <div class="code-container">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>ILDA 0x00     ; Start with 0
+ILDB 0x01     ; Next number is 1
+LOOP:
+OUT A         ; Display current number
+ADD B         ; A = A + B
+JC DONE       ; If carry flag is set (overflow > 255), stop
+SWPB          ; Swap A and B so B holds the new highest value
+JMP LOOP
+DONE:
+HLT</pre>
+    </div>
+  </div>
+
+  <div class="doc-panel">
+    <h2>2. Draw a Smiley Face</h2>
+    <p>Writes binary pixel data into the middle column (the 2nd byte) of the rows starting at 0xB8.</p>
+    <div class="code-container">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>; The screen is 3 bytes wide. 0xBF is Row 2, middle byte.
+LOAD [0xBF] 0b01100110 ; Eyes (Row 2)
+LOAD [0xC2] 0b01100110 ; Eyes (Row 3)
+LOAD [0xC8] 0b10000001 ; Mouth edges (Row 5)
+LOAD [0xCB] 0b01111110 ; Mouth bottom (Row 6)
+HLT</pre>
+    </div>
+  </div>
+
+  <div class="doc-panel">
+    <h2>3. Indirect Memory Address Math</h2>
+    <p>Uses pointers (<code>*[]</code>) to dynamically calculate addresses and draw a segmented line across the first row of the screen.</p>
+    <div class="code-container">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>LOAD [0x60] 0xB8  ; Store screen start address in pointer 0x60
+
+ILDA 0xFF         ; Full block pattern
+WBA *[0x60]       ; Write A to the address stored at 0x60 (0xB8)
+
+LDA [0x60]        ; Read the pointer address itself into A
+INC A             ; Increment address to 0xB9
+WBA [0x60]        ; Save new address back into pointer
+
+ILDA 0x0F         ; Half block pattern
+WBA *[0x60]       ; Write to 0xB9
+
+LDA [0x60]
+INC A             ; Increment address to 0xBA
+WBA [0x60]
+
+ILDA 0xF0         ; Other half block pattern
+WBA *[0x60]       ; Write to 0xBA
+HLT</pre>
+    </div>
+  </div>
+
+  <div class="doc-panel">
+    <h2>4. Looping Animation (Shifting Dot)</h2>
+    <p>Uses the Shift register (C) to move a pixel across the top-left byte of the screen. When the bit falls off (C reaches 0), it resets.</p>
+    <div class="code-container">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>RESET:
+ILDC 0b10000000   ; Load dot into C (Target for shifts)
+LOOP:
+SWPC              ; Swap C to A so we can write it
+WBA [0xB8]        ; Draw dot to top-left screen byte
+SWPC              ; Swap A back to C
+SHR 1             ; Shift dot to the right
+JZ RESET          ; If dot shifted out (ZF=1), reset it
+JMP LOOP</pre>
+    </div>
+  </div>
+
+  <div class="doc-panel">
+    <h2>5. Stack Data Reversal</h2>
+    <p>Pushes three unique variables to the hardware stack, then pops them out in reverse order. Watch the Registers panel as you step through!</p>
+    <div class="code-container">
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+<pre>ILDA 0xAA
+ILDB 0xBB
+ILDC 0xCC
+
+PUSH A
+PUSH B
+PUSH C
+
+POP A   ; A gets 0xCC
+POP B   ; B gets 0xBB
+POP C   ; C gets 0xAA
+HLT</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+function copyCode(btn) {
+  const code = btn.nextElementSibling.innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    const original = btn.innerText;
+    btn.innerText = "Copied!";
+    setTimeout(() => { btn.innerText = original; }, 1500);
+  });
+}
+</script>
+</body>
+</html>
